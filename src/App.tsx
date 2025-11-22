@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import ComingSoon from './pages/LandingPage';
 import AccountSetup from './pages/AccountSetup';
 import Events from './pages/Events';
+import Login from './pages/Login';
 import EventDetail from './pages/EventDetail';
 import Profile from './pages/Profile';
 import { initializePushNotifications } from './services/pushNotifications';
@@ -19,6 +20,7 @@ function App() {
       <div className="min-h-screen bg-lodge-cream">
         <Routes>
           <Route path="/" element={<ComingSoon />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/account-setup" element={<AccountSetup />} />
           <Route path="/events" element={<Events />} />
           <Route path="/event/:id" element={<EventDetail />} />

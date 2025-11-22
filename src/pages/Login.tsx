@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { signInWithInvitation, signInWithEmailPassword } from '../services/auth';
 import { Users, Eye, EyeOff, Mail, Key } from 'lucide-react';
 
-const InvitationCode = () => {
+const Login = () => {
   const [mode, setMode] = useState<'invitation' | 'login'>('invitation');
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
@@ -212,4 +212,4 @@ const InvitationCode = () => {
   );
 };
 
-export default InvitationCode;
+export default Login;
