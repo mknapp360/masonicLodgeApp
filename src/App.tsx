@@ -1,0 +1,32 @@
+// App.tsx
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import ComingSoon from './pages/LandingPage';
+import AccountSetup from './pages/AccountSetup';
+import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
+import Profile from './pages/Profile';
+import { initializePushNotifications } from './services/pushNotifications';
+
+function App() {
+  useEffect(() => {
+    // Initialize push notifications when app loads
+    initializePushNotifications();
+  }, []);
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-lodge-cream">
+        <Routes>
+          <Route path="/" element={<ComingSoon />} />
+          <Route path="/account-setup" element={<AccountSetup />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/event/:id" element={<EventDetail />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
