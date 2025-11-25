@@ -5,7 +5,7 @@ import { getCurrentUser, signOut } from '../services/auth';
 import { royalArchSupabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
-import { Bell, User, LogOut, X, MapPin } from 'lucide-react';
+import { Bell, User, LogOut, X, MapPin, Clock } from 'lucide-react';
 import Calendar from '../components/Calendar';
 import type { ChapterMeeting } from '../types/chapter-meetings';
 import AppLayout from '../components/AppLayout';
@@ -83,8 +83,9 @@ const Events = () => {
   };
 
   // Function to open Google Maps with the location
-  const openGoogleMaps = (location: string) => {
-    const encodedLocation = encodeURIComponent(location);
+  const openGoogleMaps = (locationName: string, address: string) => {
+    const fullLocation = address ? `${locationName}, ${address}` : locationName;
+    const encodedLocation = encodeURIComponent(fullLocation);
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
     window.open(googleMapsUrl, '_blank');
   };
@@ -144,7 +145,7 @@ const Events = () => {
 
       {/* Lodge Events Section */}
       <div className="p-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Upcoming Lodge Events</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Meetings You Are Booked Into</h2>
         {events.length === 0 ? (
           <div className="text-center py-12">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -182,32 +183,74 @@ const Events = () => {
             <div className="p-4 space-y-4">
               {selectedMeetings.map((meeting) => (
                 <div key={meeting.id} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-lg text-gray-900 mb-2">
-                    {meeting.chapter_name} - No. {meeting.chapter_number}
-                  </h4>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p><span className="font-medium">Type:</span> {meeting.meeting_type}</p>
-                    {meeting.location && (
-                      <div className="flex items-center justify-between">
-                        <p className="flex-1">
-                          <span className="font-medium">Location:</span> {meeting.location}
-                        </p>
-                        <button
-                          onClick={() => openGoogleMaps(meeting.location)}
-                          className="ml-3 p-2 hover:bg-blue-50 rounded-full transition-colors group"
-                          title="Open in Google Maps"
-                        >
-                          <MapPin className="w-5 h-5 text-masonic-blue group-hover:text-blue-700" />
-                        </button>
-                      </div>
-                    )}
-                    {meeting.start_time && (
-                      <p><span className="font-medium">Time:</span> {meeting.start_time}</p>
-                    )}
-                    {meeting.notes && (
-                      <p className="mt-2"><span className="font-medium">Notes:</span> {meeting.notes}</p>
-                    )}
+                  {/* Chapter Name and Badge */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-lg text-gray-900">
+                        {meeting.chapter_name}
+                      </h4>
+                      <p className="text-sm text-gray-600">Chapter No. {meeting.chapter_number}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded text-xs font-medium ${
+                      meeting.meeting_type === 'exaltation' ? 'bg-red-100 text-red-800' :
+                      meeting.meeting_type === 'installation' ? 'bg-purple-100 text-purple-800' :
+                      meeting.meeting_type === 'special' ? 'bg-amber-100 text-amber-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {meeting.meeting_type}
+                    </span>
                   </div>
+
+                  {/* Meeting Time */}
+                  {meeting.meeting_time && (
+                    <div className="flex items-center text-gray-700 mb-2">
+                      <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                      <span className="text-sm">{meeting.meeting_time}</span>
+                    </div>
+                  )}
+
+                  {/* Location with Google Maps Button */}
+                  {(meeting.location_name || meeting.address) && (
+                    <div className="flex items-start justify-between mt-2">
+                      <div className="flex items-start flex-1">
+                        <MapPin className="w-4 h-4 mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
+                        <div className="text-sm text-gray-700">
+                          {meeting.location_name && (
+                            <p className="font-medium">{meeting.location_name}</p>
+                          )}
+                          {meeting.address && (
+                            <p className="text-gray-600">{meeting.address}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => openGoogleMaps(meeting.location_name, meeting.address)}
+                        className="ml-3 p-2 hover:bg-blue-50 rounded-full transition-colors group flex-shrink-0"
+                        title="Open in Google Maps"
+                      >
+                        <MapPin className="w-5 h-5 text-masonic-blue group-hover:text-blue-700" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Book Here Button */}
+                  <div className="mt-4">
+                    <button
+                      className="w-full py-3 px-4 bg-masonic-blue text-white rounded-lg font-medium hover:bg-blue-800 transition-colors"
+                      onClick={() => alert('Booking functionality coming soon!')}
+                    >
+                      Book Here (Coming Soon)
+                    </button>
+                  </div>
+
+                  {/* Notes */}
+                  {meeting.notes && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Notes:</span> {meeting.notes}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

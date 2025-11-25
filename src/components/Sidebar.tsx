@@ -7,7 +7,11 @@ import {
   LogOut, 
   ChevronLeft, 
   Menu,
-  Home
+  Briefcase,
+  ChevronDown,
+  ChevronRight,
+  Wine,
+  Music
 } from 'lucide-react';
 import { signOut } from '../services/auth';
 
@@ -19,16 +23,50 @@ interface SidebarProps {
   } | null;
 }
 
+interface MenuItem {
+  icon: any;
+  label: string;
+  path?: string;
+  submenu?: SubMenuItem[];
+}
+
+interface SubMenuItem {
+  icon: any;
+  label: string;
+  path: string;
+}
+
 const Sidebar = ({ currentMember }: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menuItems = [
-    { icon: Home, label: 'Home', path: '/events' },
-    { icon: Calendar, label: 'Events', path: '/events' },
+  const menuItems: MenuItem[] = [
+    { icon: Calendar,
+      label: 'Meetings',
+      submenu: [
+        { icon: Wine, label: 'Find a Meeting', path: '/events' },
+      ]
+    },
+    { 
+      icon: Briefcase, 
+      label: 'Meeting Assistance',
+      submenu: [
+        { icon: Wine, label: 'Toast Lists', path: '/toast-lists' },
+        { icon: Music, label: 'Lodge Music', path: '/lodge-music' },
+      ]
+    },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
+
+  const toggleSubmenu = (label: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(label) 
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
+  };
 
   const handleSignOut = async () => {
     try {
@@ -74,7 +112,7 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
         `}
       >
         {/* Header - matches main page header height */}
-        <div className="h-[70px] flex items-center justify-between px-4 bg-masonic-blue text-white">
+        <div className="h-[68px] flex items-center justify-between px-4 bg-masonic-blue text-white">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
               <span className="text-masonic-blue font-bold text-sm">SM</span>
@@ -109,15 +147,69 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
         )}
 
         {/* Navigation Menu */}
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isExpanded = expandedMenus.includes(item.label);
+            const hasSubmenu = item.submenu && item.submenu.length > 0;
+            
+            // For items with submenus
+            if (hasSubmenu) {
+              return (
+                <div key={item.label}>
+                  <button
+                    onClick={() => toggleSubmenu(item.label)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+                  
+                  {/* Submenu items */}
+                  {isExpanded && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      {item.submenu!.map((subItem) => {
+                        const SubIcon = subItem.icon;
+                        const isActive = location.pathname === subItem.path;
+                        
+                        return (
+                          <button
+                            key={subItem.path}
+                            onClick={() => handleNavigation(subItem.path)}
+                            className={`
+                              w-full flex items-center space-x-3 px-3 py-2 rounded-lg
+                              transition-colors
+                              ${isActive 
+                                ? 'bg-masonic-blue text-white' 
+                                : 'text-gray-600 hover:bg-gray-100'
+                              }
+                            `}
+                          >
+                            <SubIcon className="w-4 h-4" />
+                            <span className="text-sm font-medium">{subItem.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            
+            // For regular menu items without submenus
             const isActive = location.pathname === item.path;
             
             return (
               <button
                 key={item.path}
-                onClick={() => handleNavigation(item.path)}
+                onClick={() => handleNavigation(item.path!)}
                 className={`
                   w-full flex items-center space-x-3 px-3 py-2 rounded-lg
                   transition-colors
