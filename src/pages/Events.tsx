@@ -127,7 +127,7 @@ const Events = () => {
       {/* Calendar Section */}
       <section className="py-8 px-4 bg-gray-50">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Chapter Meetings Calendar</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Sussex Calendar (Currently Chapter only)</h2>
           {calendarLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-masonic-blue mx-auto"></div>
@@ -145,7 +145,7 @@ const Events = () => {
 
       {/* Lodge Events Section */}
       <div className="p-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Meetings You Are Booked Into</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Find Meetings in Your Area</h2>
         {events.length === 0 ? (
           <div className="text-center py-12">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />

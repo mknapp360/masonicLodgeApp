@@ -46,6 +46,7 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
     { icon: Calendar,
       label: 'Meetings',
       submenu: [
+        { icon: Wine, label: 'My Booked Meetings', path: '/my-meetings' },
         { icon: Wine, label: 'Find a Meeting', path: '/events' },
       ]
     },

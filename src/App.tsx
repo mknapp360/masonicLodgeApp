@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import ComingSoon from './pages/LandingPage';
 import AccountSetup from './pages/AccountSetup';
 import Events from './pages/Events';
+import MyMeetings from './pages/MyMeetings';
 import Login from './pages/Login';
 import EventDetail from './pages/EventDetail';
 import Profile from './pages/Profile';
@@ -23,6 +24,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/account-setup" element={<AccountSetup />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/my-meetings" element={<MyMeetings />} />
           <Route path="/event/:id" element={<EventDetail />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
