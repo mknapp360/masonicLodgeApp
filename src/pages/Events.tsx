@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { getCurrentUser, signOut } from '../services/auth';
-import { supabase } from '../services/supabase';
+import { royalArchSupabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
-import { Bell, User, LogOut, X } from 'lucide-react';
+import { Bell, User, LogOut, X, MapPin } from 'lucide-react';
 import Calendar from '../components/Calendar';
 import type { ChapterMeeting } from '../types/chapter-meetings';
+import AppLayout from '../components/AppLayout';
 
 const Events = () => {
   const { events, loading: eventsLoading } = useEvents();
@@ -42,7 +43,8 @@ const Events = () => {
   async function loadMeetings() {
     setCalendarLoading(true);
     try {
-      const { data, error } = await supabase
+      // Use royalArchSupabase instead of supabase for chapter_meetings
+      const { data, error } = await royalArchSupabase
         .from('chapter_meetings')
         .select('*')
         .eq('published', true)
@@ -80,21 +82,31 @@ const Events = () => {
     });
   };
 
+  // Function to open Google Maps with the location
+  const openGoogleMaps = (location: string) => {
+    const encodedLocation = encodeURIComponent(location);
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+    window.open(googleMapsUrl, '_blank');
+  };
+
   if (eventsLoading || !currentMember) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-masonic-blue mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading events...</p>
+      <AppLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-masonic-blue mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading events...</p>
+          </div>
         </div>
-      </div>
+      </AppLayout> 
     );
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-masonic-blue text-white p-4">
+      <div className="h-[70px] bg-masonic-blue text-white p-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">Lodge Events</h1>
@@ -176,7 +188,18 @@ const Events = () => {
                   <div className="space-y-1 text-sm text-gray-600">
                     <p><span className="font-medium">Type:</span> {meeting.meeting_type}</p>
                     {meeting.location && (
-                      <p><span className="font-medium">Location:</span> {meeting.location}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="flex-1">
+                          <span className="font-medium">Location:</span> {meeting.location}
+                        </p>
+                        <button
+                          onClick={() => openGoogleMaps(meeting.location)}
+                          className="ml-3 p-2 hover:bg-blue-50 rounded-full transition-colors group"
+                          title="Open in Google Maps"
+                        >
+                          <MapPin className="w-5 h-5 text-masonic-blue group-hover:text-blue-700" />
+                        </button>
+                      </div>
                     )}
                     {meeting.start_time && (
                       <p><span className="font-medium">Time:</span> {meeting.start_time}</p>
@@ -192,6 +215,7 @@ const Events = () => {
         </div>
       )}
     </div>
+    </AppLayout>
   );
 };
 
