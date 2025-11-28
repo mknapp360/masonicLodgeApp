@@ -1,5 +1,5 @@
 // src/components/Sidebar.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Calendar, 
@@ -11,7 +11,8 @@ import {
   ChevronDown,
   ChevronRight,
   Wine,
-  Music
+  Music,
+  ShoppingBag
 } from 'lucide-react';
 import { signOut } from '../services/auth';
 
@@ -27,20 +28,45 @@ interface MenuItem {
   icon: any;
   label: string;
   path?: string;
+  externalUrl?: string;
   submenu?: SubMenuItem[];
 }
 
 interface SubMenuItem {
   icon: any;
   label: string;
-  path: string;
+  path?: string;
+  externalUrl?: string;
 }
 
 const Sidebar = ({ currentMember }: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load expanded menus from localStorage on mount
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
+    const saved = localStorage.getItem('expandedMenus');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Auto-expand submenu if current path matches a submenu item
+  useEffect(() => {
+    menuItems.forEach((item) => {
+      if (item.submenu) {
+        const hasActiveSubmenuItem = item.submenu.some(
+          subItem => subItem.path && location.pathname === subItem.path
+        );
+        if (hasActiveSubmenuItem && !expandedMenus.includes(item.label)) {
+          setExpandedMenus(prev => {
+            const updated = [...prev, item.label];
+            localStorage.setItem('expandedMenus', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      }
+    });
+  }, [location.pathname]);
 
   const menuItems: MenuItem[] = [
     { icon: Calendar,
@@ -52,21 +78,62 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
     },
     { 
       icon: Briefcase, 
-      label: 'Meeting Assistance',
+      label: 'Tools for Meetings',
       submenu: [
         { icon: Wine, label: 'Toast Lists', path: '/toast-lists' },
         { icon: Music, label: 'Lodge Music', path: '/lodge-music' },
       ]
     },
+    
+    { 
+      icon: Briefcase, 
+      label: 'Provincial Links',
+      submenu: [
+        { icon: Wine, label: 'Passport', path: '/toast-lists' },
+        { icon: Music, label: 'Prov. Craft website', path: '/lodge-music' },
+        { icon: Music, label: 'Prov. Royal Arch website ', path: '/lodge-music' },
+        { icon: Music, label: 'Prov. Facebook', path: '/lodge-music' },
+        { icon: Music, label: 'Prov. Instagram', path: '/lodge-music' },
+      ]
+    },
+    { 
+      icon: Briefcase, 
+      label: '2028 Festival',
+      submenu: [
+        { icon: Wine, label: 'Donate', path: '/toast-lists' },
+        { icon: Music, label: 'Festival Updates', path: '/lodge-music' },
+      ]
+    },
+    { 
+      icon: Briefcase, 
+      label: 'UGLE Links',
+      submenu: [
+        { icon: Wine, label: 'UGLE Website', externalUrl: 'https://www.ugle.org.uk/'},
+        { icon: Wine, label: 'Portal', path: '/toast-lists' },
+        { icon: Music, label: 'Solomon', path: '/lodge-music' },
+        { icon: Music, label: 'UGLE - Facebook', path: '/lodge-music' },
+        { icon: Music, label: 'UGLE - Instagram', path: '/lodge-music' },
+        { icon: Music, label: 'Solomon - Facebook', path: '/lodge-music' },
+      ]
+    },
+    
+    { icon: ShoppingBag, label: 'Provincial Shop', externalUrl: 'https://sussexmasons.org.uk/merchandise/' },
+    { icon: User, label: 'Light Blues Club', path: '/shop' },
+    { icon: User, label: 'Provincial Analytics', path: '/prov-analytics' },
+    
     { icon: User, label: 'Profile', path: '/profile' },
   ];
 
   const toggleSubmenu = (label: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(label) 
+    setExpandedMenus(prev => {
+      const updated = prev.includes(label) 
         ? prev.filter(item => item !== label)
-        : [...prev, label]
-    );
+        : [...prev, label];
+      
+      // Save to localStorage
+      localStorage.setItem('expandedMenus', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleSignOut = async () => {
@@ -176,14 +243,33 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
                   {/* Submenu items */}
                   {isExpanded && (
                     <div className="ml-4 mt-1 space-y-1">
-                      {item.submenu!.map((subItem) => {
+                      {item.submenu!.map((subItem, index) => {
                         const SubIcon = subItem.icon;
-                        const isActive = location.pathname === subItem.path;
+                        
+                        // Handle external URLs
+                        if (subItem.externalUrl) {
+                          return (
+                            <a
+                              key={`${item.label}-${index}`}
+                              href={subItem.externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              <SubIcon className="w-4 h-4" />
+                              <span className="text-sm font-medium">{subItem.label}</span>
+                            </a>
+                          );
+                        }
+                        
+                        // Handle internal routes
+                        const isActive = subItem.path ? location.pathname === subItem.path : false;
                         
                         return (
                           <button
-                            key={subItem.path}
-                            onClick={() => handleNavigation(subItem.path)}
+                            key={subItem.path || `${item.label}-${index}`}
+                            onClick={() => subItem.path && handleNavigation(subItem.path)}
                             className={`
                               w-full flex items-center space-x-3 px-3 py-2 rounded-lg
                               transition-colors
@@ -205,12 +291,30 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
             }
             
             // For regular menu items without submenus
-            const isActive = location.pathname === item.path;
+            if (item.externalUrl) {
+              // External link - opens in new tab
+              return (
+                <a
+                  key={item.label}
+                  href={item.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  onClick={() => setIsOpen(false)} // Close mobile menu
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </a>
+              );
+            }
+            
+            // Internal link
+            const isActive = item.path ? location.pathname === item.path : false;
             
             return (
               <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path!)}
+                key={item.path || item.label}
+                onClick={() => item.path && handleNavigation(item.path)}
                 className={`
                   w-full flex items-center space-x-3 px-3 py-2 rounded-lg
                   transition-colors

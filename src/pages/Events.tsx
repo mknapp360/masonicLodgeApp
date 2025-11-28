@@ -1,17 +1,17 @@
 // src/pages/Events.tsx
 import { useState, useEffect } from 'react';
-import { useEvents } from '../hooks/useEvents';
 import { getCurrentUser, signOut } from '../services/auth';
 import { royalArchSupabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
-import EventCard from '../components/EventCard';
-import { Bell, User, LogOut, X, MapPin, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom'
+import { Card, CardContent } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { User, LogOut, X, MapPin, Clock } from 'lucide-react';
 import Calendar from '../components/Calendar';
 import type { ChapterMeeting } from '../types/chapter-meetings';
 import AppLayout from '../components/AppLayout';
 
 const Events = () => {
-  const { events, loading: eventsLoading } = useEvents();
   const [currentMember, setCurrentMember] = useState<any>(null);
   const navigate = useNavigate();
 
@@ -90,18 +90,7 @@ const Events = () => {
     window.open(googleMapsUrl, '_blank');
   };
 
-  if (eventsLoading || !currentMember) {
-    return (
-      <AppLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-masonic-blue mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading events...</p>
-          </div>
-        </div>
-      </AppLayout> 
-    );
-  }
+  
 
   return (
     <AppLayout>
@@ -144,26 +133,167 @@ const Events = () => {
       </section>
 
       {/* Lodge Events Section */}
-      <div className="p-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Find Meetings in Your Area</h2>
-        {events.length === 0 ? (
-          <div className="text-center py-12">
-            <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming events</h3>
-            <p className="text-gray-600">Check back later for new lodge events.</p>
+      <div className="container mx-auto px-4 pt-12 pb-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-headerText">
+              Find Royal Arch meetings in your area
+            </h2>
+            <div className="h-1 w-32 bg-primary mx-auto"></div>
           </div>
-        ) : (
-          <div>
-            {events.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onPress={() => navigate(`/event/${event.id}`)}
-              />
-            ))}
+        </div>
+
+        {/* Three Column Cards */}
+        <div className="container mx-auto px-4">
+          <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
+            {/* Near 1066 */}
+            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
+              <CardContent className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
+                  Near 1066
+                </h3>
+                <ul className="space-y-2 mb-6 text-center flex-1">
+                  <li className="text-muted-foreground">Battle</li>
+                  <li className="text-muted-foreground">Bexhill</li>
+                  <li className="text-muted-foreground">Burwash</li>
+                  <li className="text-muted-foreground">Herstmonceux</li>
+                  <li className="text-muted-foreground">Rye</li>
+                  <li className="text-muted-foreground">St. Leonards</li>
+                </ul>
+                <div className="mt-auto text-center">
+                  <Link
+                    to={`/1066-royal-arch`}
+                    >
+                    <Button variant="outline" className="w-full">
+                      See upcoming meetings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Near Brighton */}
+            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
+              <CardContent className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
+                  Near Brighton
+                </h3>
+                <ul className="space-y-2 mb-6 text-center flex-1">
+                  <li className="text-muted-foreground">Brighton</li>
+                  <li className="text-muted-foreground">Hove</li>
+                  <li className="text-muted-foreground">Lewes</li>
+                  <li className="text-muted-foreground">Peacehaven</li>
+                </ul>
+                <div className="mt-auto text-center">
+                  <Link
+                    to={`/near-brighton-royal-arch`}
+                    >
+                    <Button variant="outline" className="w-full">
+                      See upcoming meetings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Near Chichester */}
+            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
+              <CardContent className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
+                  Near Chichester
+                </h3>
+                <ul className="space-y-2 mb-6 text-center flex-1">
+                  <li className="text-muted-foreground">Bognor Regis</li>
+                  <li className="text-muted-foreground">Chichester</li>
+                  <li className="text-muted-foreground">Midhurst</li>
+                </ul>
+                <div className="mt-auto text-center">
+                  <Link
+                    to={`/near-chichester-royal-arch`}
+                    >
+                    <Button variant="outline" className="w-full">
+                      See upcoming meetings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            
+
+            {/* Near Crawley */}
+            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
+              <CardContent className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
+                  Near Crawley
+                </h3>
+                <ul className="space-y-2 mb-6 text-center flex-1">
+                  <li className="text-muted-foreground">Crawley</li>
+                  <li className="text-muted-foreground">East Grinstead</li>
+                  <li className="text-muted-foreground">Horsham</li>
+                  <li className="text-muted-foreground">Pullborough</li>
+                </ul>
+                <div className="mt-auto text-center">
+                  <Link
+                    to={`/near-crawley-royal-arch`}
+                    >
+                    <Button variant="outline" className="w-full">
+                      See upcoming meetings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Near Eastbourne */}
+            <Card className="bg-[#f2f2f2] hover:shadow-lg transition-shadow">
+              <CardContent className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
+                  Near Eastbourne
+                </h3>
+                <ul className="space-y-2 mb-6 text-center flex-1">
+                  <li className="text-muted-foreground">Eastbourne</li>
+                  <li className="text-muted-foreground">Herstmonceux</li>
+                  <li className="text-muted-foreground">Lewes</li>
+                  <li className="text-muted-foreground">Uckfield</li>
+                </ul>
+                <div className="mt-auto text-center">
+                  <Link
+                    to={`/near-eastbourne-royal-arch`}
+                    >
+                    <Button variant="outline" className="w-full">
+                      See upcoming meetings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Near Worthing */}
+            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
+              <CardContent className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
+                  Near Worthing
+                </h3>
+                <ul className="space-y-2 mb-6 text-center flex-1">
+                  <li className="text-muted-foreground">Littlehampton</li>
+                  <li className="text-muted-foreground">Pullborough</li>
+                  <li className="text-muted-foreground">Worthing</li>
+                </ul>
+                <div className="mt-auto text-center">
+                  <Link
+                    to={`/near-worthing-royal-arch`}
+                    >
+                    <Button variant="outline" className="w-full">
+                      See upcoming meetings
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            
           </div>
-        )}
-      </div>
+        </div>
 
       {/* Modal for selected meetings */}
       {showModal && (
