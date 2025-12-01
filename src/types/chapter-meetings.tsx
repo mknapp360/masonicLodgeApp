@@ -10,6 +10,7 @@ export type MeetingType = 'regular' | 'exaltation' | 'installation' | 'special';
  * Complete ChapterMeeting interface matching the database schema
  */
 export interface ChapterMeeting {
+  event_title: string;
   notes: any;
   start_time: any;
   location: any;

@@ -12,11 +12,13 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  BarChart3
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/AppLayout';
 import { getCurrentUser } from '@/services/auth';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface EventAnalytics {
   totalEvents: number;
@@ -56,9 +58,27 @@ interface EventDetail {
   lodge_number: string;
 }
 
+interface HistoricalStats {
+  year: number;
+  lodges_end_of_year: number;
+  lodge_memberships_end_of_year: number;
+  individual_members_end_of_year: number;
+  initiated: number;
+  resigned: number;
+  ceased_excluded: number;
+  deceased: number;
+  honorary_members: number;
+  joined_rejoined: number;
+  net_gain_loss: number;
+  individual_net_loss: number;
+  late_return_adjustments: number;
+  average_age_of_initiates: number;
+}
+
 const ProvincialAnalytics = () => {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<EventAnalytics | null>(null);
+  const [historicalData, setHistoricalData] = useState<HistoricalStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'30' | '90' | '365' | 'all'>('90');
@@ -97,6 +117,29 @@ const ProvincialAnalytics = () => {
       }
 
       const provincialLodgeId = userLodge.provincial_lodge_id;
+
+      // Fetch historical provincial statistics for pitch (specific Sussex data)
+      // Note: Each row represents the entire province's annual stats
+      const historicalRowIds = [
+        'e478c3f5-aa7d-4886-94ce-362780ddac09', // 2021
+        'a7e6d3d3-f7a1-493a-814e-9fa7c51f47c7', // 2022
+        '3aff553a-43d8-4352-ac7d-de2859bae118'  // 2023
+      ];
+
+      const { data: historicalStatsData, error: historicalError } = await supabase
+        .from('provincial_annual_stats')
+        .select('*')
+        .in('id', historicalRowIds)
+        .order('year', { ascending: true });
+
+      console.log('Historical Stats Query:', {
+        data: historicalStatsData,
+        error: historicalError
+      });
+
+      if (!historicalError && historicalStatsData) {
+        setHistoricalData(historicalStatsData);
+      }
 
       // Calculate date threshold based on selected range
       const today = new Date();
@@ -435,7 +478,7 @@ const ProvincialAnalytics = () => {
               </button>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Provincial Analytics</h1>
-                <p className="text-gray-600 mt-1">Event and attendance insights</p>
+                <p className="text-gray-600 mt-1">Real-time engagement insights & historical trends</p>
               </div>
             </div>
           </div>
@@ -463,7 +506,449 @@ const ProvincialAnalytics = () => {
           </div>
         </div>
 
-        {/* Key Metrics */}
+        {/* Historical Provincial Statistics - NEW SECTION */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex items-center mb-4">
+            <BarChart3 className="w-6 h-6 mr-2 text-masonic-blue" />
+            <h2 className="text-xl font-bold text-gray-900">
+              Historical Provincial Statistics (Annual Data)
+            </h2>
+          </div>
+          
+          {historicalData.length === 0 ? (
+            <div className="text-center py-8 bg-yellow-50 rounded-lg">
+              <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+              <p className="text-gray-700 font-medium">No historical data found</p>
+              <p className="text-sm text-gray-600 mt-2">
+                Make sure the <code className="bg-gray-200 px-2 py-1 rounded">provincial_annual_stats</code> table exists and has data.
+              </p>
+              <p className="text-xs text-gray-500 mt-2">Check browser console for debugging info</p>
+            </div>
+          ) : (
+            <>
+            {/* Year-over-Year Comparison Table */}
+            <div className="overflow-x-auto mb-6">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50">
+                      Metric
+                    </th>
+                    {historicalData.map(year => (
+                      <th key={year.year} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                        {year.year}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {/* Lodges */}
+                  <tr className="bg-blue-50">
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900 sticky left-0 bg-blue-50">
+                      Total Lodges
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-gray-900">
+                        {year.lodges_end_of_year}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Individual Members */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900 sticky left-0 bg-white">
+                      Individual Members
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center font-bold text-gray-900">
+                        {year.individual_members_end_of_year?.toLocaleString()}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  <tr className="bg-red-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-red-50">
+                      Net Loss vs Prior Year
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center font-bold text-red-600">
+                        {year.individual_net_loss}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Initiates */}
+                  <tr className="bg-green-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-green-50">
+                      New Initiates
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center font-bold text-green-600">
+                        +{year.initiated}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Joined/Rejoined */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                      Joined / Re-joined
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-green-600">
+                        +{year.joined_rejoined}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Resignations */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                      Resignations
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-red-600">
+                        -{year.resigned}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Ceased/Excluded */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                      Ceased / Excluded
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-orange-600">
+                        -{year.ceased_excluded}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Deceased */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                      Deceased
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-gray-600">
+                        -{year.deceased}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {/* Honorary Members */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                      Honorary Members
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-gray-600">
+                        -{year.honorary_members}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Late Return Adjustments - CRITICAL METRIC */}
+                  <tr className="bg-yellow-50">
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900 sticky left-0 bg-yellow-50">
+                      Late Return Adjustments
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center font-bold text-yellow-700">
+                        {year.late_return_adjustments}
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Average Age of Initiates */}
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                      Avg Age of Initiates
+                    </td>
+                    {historicalData.map(year => (
+                      <td key={year.year} className="px-4 py-3 text-sm text-center text-gray-900">
+                        {year.average_age_of_initiates?.toFixed(1)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Visual Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Individual Membership Decline Chart */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">Individual Membership Trend</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={historicalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis domain={[3600, 4000]} />
+                    <Tooltip />
+                    <Area 
+                      type="monotone" 
+                      dataKey="individual_members_end_of_year" 
+                      stroke="#dc2626" 
+                      fill="#fecaca" 
+                      name="Individual Members"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-red-600 font-medium mt-2">
+                  ↓ {historicalData[0]?.individual_members_end_of_year - 
+                     historicalData[historicalData.length - 1]?.individual_members_end_of_year} members lost (
+                  {(((historicalData[0]?.individual_members_end_of_year - 
+                      historicalData[historicalData.length - 1]?.individual_members_end_of_year) / 
+                      historicalData[0]?.individual_members_end_of_year) * 100).toFixed(1)}% decline)
+                </p>
+              </div>
+
+              {/* THE HIDDEN CRISIS: Individual vs Lodge Memberships Divergence */}
+              <div className="bg-amber-50 p-4 rounded-lg border-2 border-amber-400">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">
+                  🔍 The Hidden Crisis: Membership Ratio
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={historicalData.map(year => ({
+                    year: year.year,
+                    individuals: year.individual_members_end_of_year,
+                    lodge_memberships: year.lodge_memberships_end_of_year,
+                    ratio: (year.lodge_memberships_end_of_year / year.individual_members_end_of_year).toFixed(2)
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis yAxisId="left" domain={[3500, 5000]} />
+                    <YAxis yAxisId="right" orientation="right" domain={[1.1, 1.25]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="individuals" 
+                      stroke="#dc2626" 
+                      strokeWidth={2}
+                      name="Individual Members (↓)"
+                      dot={{ fill: '#dc2626', r: 5 }}
+                    />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="lodge_memberships" 
+                      stroke="#2563eb" 
+                      strokeWidth={2}
+                      name="Lodge Memberships (stable)"
+                      dot={{ fill: '#2563eb', r: 5 }}
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="ratio" 
+                      stroke="#f59e0b" 
+                      strokeWidth={3}
+                      name="Ratio (↑)"
+                      dot={{ fill: '#f59e0b', r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-amber-900 font-semibold mt-2">
+                  Members declining, but ratio INCREASING - same people joining more lodges
+                </p>
+              </div>
+
+              {/* Initiations vs Losses Chart */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">Gains vs Losses</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={historicalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="initiated" fill="#22c55e" name="Initiated" />
+                    <Bar dataKey="joined_rejoined" fill="#86efac" name="Joined/Rejoined" />
+                    <Bar dataKey="resigned" fill="#dc2626" name="Resigned" />
+                    <Bar dataKey="ceased_excluded" fill="#f97316" name="Ceased/Excluded" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* THE INITIATION PARADOX */}
+              <div className="bg-purple-50 p-4 rounded-lg border-2 border-purple-400">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">
+                  ❓ The Initiation Paradox
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={historicalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="initiated" fill="#22c55e" name="New Initiates (↑)" />
+                    <Bar 
+                      dataKey={(data) => Math.abs(data.individual_net_loss)} 
+                      fill="#dc2626" 
+                      name="Net Individual Loss"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-purple-900 font-semibold mt-2">
+                  Initiations UP 56%, but still losing members - where are they going?
+                </p>
+              </div>
+
+              {/* ACCELERATION OF LOSSES */}
+              <div className="bg-rose-50 p-4 rounded-lg border-2 border-rose-400">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">
+                  📈 Loss Rate Accelerating
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={[
+                    { period: '2021→2022', loss: 116, rate: 2.9 },
+                    { period: '2022→2023', loss: 139, rate: 3.6 }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="loss" fill="#dc2626" name="Members Lost" />
+                    <Line yAxisId="right" type="monotone" dataKey="rate" stroke="#7c3aed" strokeWidth={3} name="Loss Rate %" />
+                  </BarChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-rose-900 font-semibold mt-2">
+                  Loss rate increased 20% - problem is getting worse, not better
+                </p>
+              </div>
+
+              {/* CEASED/EXCLUDED CRISIS */}
+              <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-400">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">
+                  ⚡ Ceased/Excluded Spike
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={historicalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="ceased_excluded" fill="#f97316" name="Ceased/Excluded">
+                      {historicalData.map((_entry, _index) => {
+                        // Calculate percentage change from first year
+                        return null;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-orange-900 font-semibold mt-2">
+                  2021: 32 → 2022: 124 (287% increase!) → 2023: 100 - What happened?
+                </p>
+              </div>
+
+              {/* Late Return Adjustments - THE KEY METRIC */}
+              <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-400">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">
+                  ⚠️ Data Latency Crisis: Late Return Adjustments
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={historicalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="late_return_adjustments" fill="#eab308" name="Late Adjustments" />
+                  </BarChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-yellow-900 font-semibold mt-2">
+                  174 membership changes discovered months after they occurred in 2023
+                </p>
+              </div>
+
+              {/* Net Losses Comparison */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3 text-center">Annual Net Loss</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={historicalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="individual_net_loss" 
+                      stroke="#dc2626" 
+                      strokeWidth={3}
+                      name="Net Loss"
+                      dot={{ fill: '#dc2626', r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-center text-gray-600 font-medium mt-2">
+                  Despite increased initiations, net losses continue
+                </p>
+              </div>
+            </div>
+
+            {/* Key Insights Box */}
+            <div className="p-4 bg-blue-50 border-l-4 border-masonic-blue rounded">
+              <h3 className="font-semibold text-gray-900 mb-2">📊 Key Insights from Historical Data</h3>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>
+                  <strong>Individual membership declining:</strong> Lost{' '}
+                  {historicalData[0]?.individual_members_end_of_year - 
+                   historicalData[historicalData.length - 1]?.individual_members_end_of_year} members from{' '}
+                  {historicalData[0]?.year} to {historicalData[historicalData.length - 1]?.year}
+                  {' '}({(((historicalData[0]?.individual_members_end_of_year - 
+                      historicalData[historicalData.length - 1]?.individual_members_end_of_year) / 
+                      historicalData[0]?.individual_members_end_of_year) * 100).toFixed(1)}% decline)
+                </li>
+                <li>
+                  <strong>Initiation success:</strong> Increased initiates from {historicalData[0]?.initiated} to{' '}
+                  {historicalData[historicalData.length - 1]?.initiated} 
+                  {' '}(+{(((historicalData[historicalData.length - 1]?.initiated - 
+                      historicalData[0]?.initiated) / 
+                      historicalData[0]?.initiated) * 100).toFixed(0)}%)
+                </li>
+                <li className="text-red-600 font-semibold">
+                  <strong>Data latency crisis:</strong> Late return adjustments increased from{' '}
+                  {historicalData[0]?.late_return_adjustments} to{' '}
+                  {historicalData[historicalData.length - 1]?.late_return_adjustments} - 
+                  representing {Math.abs(historicalData[historicalData.length - 1]?.late_return_adjustments || 0)} membership 
+                  changes discovered months after they occurred
+                </li>
+                <li>
+                  <strong>Retention challenge:</strong> Despite recruiting{' '}
+                  {historicalData.reduce((sum, year) => sum + year.initiated, 0)} new initiates over{' '}
+                  {historicalData.length} years, net loss is{' '}
+                  {historicalData[0]?.individual_members_end_of_year - 
+                   historicalData[historicalData.length - 1]?.individual_members_end_of_year} members
+                </li>
+              </ul>
+            </div>
+
+            {/* What Real-Time Intelligence Would Show */}
+            <div className="mt-6 p-4 bg-masonic-blue/10 border-l-4 border-masonic-blue rounded">
+              <h3 className="font-semibold text-gray-900 mb-2">💡 What Real-Time Intelligence Would Reveal</h3>
+              <p className="text-sm text-gray-700 mb-3">
+                This historical data shows the <strong>outcome</strong> - but with our platform, you would see the <strong>process</strong> as it unfolds:
+              </p>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>• <strong>Early warning:</strong> Identify at-risk members 90+ days before resignation</li>
+                <li>• <strong>Behavioral patterns:</strong> See declining attendance trends before members ghost completely</li>
+                <li>• <strong>Lodge health scores:</strong> Know which lodges are struggling months before closure becomes necessary</li>
+                <li>• <strong>Zero latency:</strong> No more "late return adjustments" - every change visible instantly</li>
+                <li>• <strong>Retention analysis:</strong> Track which lodges retain new initiates and learn from their success</li>
+              </ul>
+            </div>
+            </>
+          )}
+        </div>
+
+        {/* Key Metrics - EXISTING SECTION */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">

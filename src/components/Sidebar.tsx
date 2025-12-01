@@ -37,6 +37,14 @@ interface SubMenuItem {
   label: string;
   path?: string;
   externalUrl?: string;
+  submenu?: NestedSubMenuItem[];
+}
+
+interface NestedSubMenuItem {
+  icon: any;
+  label: string;
+  path?: string;
+  externalUrl?: string;
 }
 
 const Sidebar = ({ currentMember }: SidebarProps) => {
@@ -47,6 +55,12 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
   // Load expanded menus from localStorage on mount
   const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
     const saved = localStorage.getItem('expandedMenus');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Track expanded nested submenus
+  const [expandedNestedMenus, setExpandedNestedMenus] = useState<string[]>(() => {
+    const saved = localStorage.getItem('expandedNestedMenus');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -80,7 +94,14 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
       icon: Briefcase, 
       label: 'Tools for Meetings',
       submenu: [
-        { icon: Wine, label: 'Toast Lists', path: '/toast-lists' },
+        { 
+          icon: Wine, 
+          label: 'Toast Lists',
+          submenu: [
+            { icon: Wine, label: 'Craft Toast List', externalUrl: 'https://ydnwstjhgwrmgtwykqgu.supabase.co/storage/v1/object/public/toast%20lists/CraftToastList12-2025.pdf' },
+            { icon: Wine, label: 'Royal Arch Toast List', externalUrl: 'https://ydnwstjhgwrmgtwykqgu.supabase.co/storage/v1/object/public/toast%20lists/RoyalArchToastList12-2025.pdf' },
+          ]
+        },
         { icon: Music, label: 'Lodge Music', path: '/lodge-music' },
       ]
     },
@@ -109,16 +130,26 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
       label: 'UGLE Links',
       submenu: [
         { icon: Wine, label: 'UGLE Website', externalUrl: 'https://www.ugle.org.uk/'},
-        { icon: Wine, label: 'Portal', path: '/toast-lists' },
-        { icon: Music, label: 'Solomon', path: '/lodge-music' },
-        { icon: Music, label: 'UGLE - Facebook', path: '/lodge-music' },
-        { icon: Music, label: 'UGLE - Instagram', path: '/lodge-music' },
-        { icon: Music, label: 'Solomon - Facebook', path: '/lodge-music' },
+        { icon: Wine, label: 'Portal', externalUrl: 'https://desktop.portal.ugle.org.uk/auth/login' },
+        { icon: Music, label: 'Solomon', externalUrl: 'https://solomon.ugle.org.uk/' },
+        { icon: Music, label: 'UGLE - Facebook', externalUrl: 'https://www.facebook.com/UnitedGrandLodgeofEngland' },
+        { icon: Music, label: 'UGLE - Instagram', externalUrl: 'https://www.instagram.com/unitedgrandlodgeofengland/?igsh=MXU5aXE4a240M3N5bg%3D%3D#' },
+        { icon: Music, label: 'Solomon - Facebook', externalUrl: 'https://www.facebook.com/SolomonUGLE' },
       ]
     },
     
     { icon: ShoppingBag, label: 'Provincial Shop', externalUrl: 'https://sussexmasons.org.uk/merchandise/' },
-    { icon: User, label: 'Light Blues Club', path: '/shop' },
+    { 
+      icon: Briefcase, 
+      label: 'Light Blues Clubs',
+      submenu: [
+        { icon: Wine, label: 'Hollywell Club', externalUrl: 'https://holywellclub.org/' },
+        { icon: Wine, label: 'The Ashlar Club', externalUrl: 'https://theashlarclub.com/' },
+        { icon: Wine, label: 'The West Light Blue Club', externalUrl: 'https://www.westsussexlbc.org/' },
+        { icon: Wine, label: 'Ionic Club', externalUrl: 'https://eastgroup-sussexmasons.org/lightblue/' },
+        { icon: Wine, label: 'Pavilion Club', externalUrl: 'https://thepavilionclub.org.uk/' },
+      ]
+    },
     { icon: User, label: 'Provincial Analytics', path: '/prov-analytics' },
     
     { icon: User, label: 'Profile', path: '/profile' },
@@ -132,6 +163,19 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
       
       // Save to localStorage
       localStorage.setItem('expandedMenus', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const toggleNestedSubmenu = (parentLabel: string, label: string) => {
+    const key = `${parentLabel}-${label}`;
+    setExpandedNestedMenus(prev => {
+      const updated = prev.includes(key) 
+        ? prev.filter(item => item !== key)
+        : [...prev, key];
+      
+      // Save to localStorage
+      localStorage.setItem('expandedNestedMenus', JSON.stringify(updated));
       return updated;
     });
   };
@@ -245,6 +289,9 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
                     <div className="ml-4 mt-1 space-y-1">
                       {item.submenu!.map((subItem, index) => {
                         const SubIcon = subItem.icon;
+                        const hasNestedSubmenu = subItem.submenu && subItem.submenu.length > 0;
+                        const nestedKey = `${item.label}-${subItem.label}`;
+                        const isNestedExpanded = expandedNestedMenus.includes(nestedKey);
                         
                         // Handle external URLs
                         if (subItem.externalUrl) {
@@ -260,6 +307,75 @@ const Sidebar = ({ currentMember }: SidebarProps) => {
                               <SubIcon className="w-4 h-4" />
                               <span className="text-sm font-medium">{subItem.label}</span>
                             </a>
+                          );
+                        }
+                        
+                        // Handle nested submenus
+                        if (hasNestedSubmenu) {
+                          return (
+                            <div key={`${item.label}-${index}`}>
+                              <button
+                                onClick={() => toggleNestedSubmenu(item.label, subItem.label)}
+                                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <SubIcon className="w-4 h-4" />
+                                  <span className="text-sm font-medium">{subItem.label}</span>
+                                </div>
+                                {isNestedExpanded ? (
+                                  <ChevronDown className="w-3 h-3" />
+                                ) : (
+                                  <ChevronRight className="w-3 h-3" />
+                                )}
+                              </button>
+                              
+                              {/* Nested submenu items */}
+                              {isNestedExpanded && (
+                                <div className="ml-4 mt-1 space-y-1">
+                                  {subItem.submenu!.map((nestedItem, nestedIndex) => {
+                                    const NestedIcon = nestedItem.icon;
+                                    
+                                    // Handle external URLs in nested menu
+                                    if (nestedItem.externalUrl) {
+                                      return (
+                                        <a
+                                          key={`${item.label}-${index}-${nestedIndex}`}
+                                          href={nestedItem.externalUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors text-xs"
+                                          onClick={() => setIsOpen(false)}
+                                        >
+                                          <NestedIcon className="w-3 h-3" />
+                                          <span className="font-medium">{nestedItem.label}</span>
+                                        </a>
+                                      );
+                                    }
+                                    
+                                    // Handle internal routes in nested menu
+                                    const isActive = nestedItem.path ? location.pathname === nestedItem.path : false;
+                                    
+                                    return (
+                                      <button
+                                        key={nestedItem.path || `${item.label}-${index}-${nestedIndex}`}
+                                        onClick={() => nestedItem.path && handleNavigation(nestedItem.path)}
+                                        className={`
+                                          w-full flex items-center space-x-2 px-3 py-2 rounded-lg
+                                          transition-colors text-xs
+                                          ${isActive 
+                                            ? 'bg-masonic-blue text-white' 
+                                            : 'text-gray-500 hover:bg-gray-100'
+                                          }
+                                        `}
+                                      >
+                                        <NestedIcon className="w-3 h-3" />
+                                        <span className="font-medium">{nestedItem.label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           );
                         }
                         

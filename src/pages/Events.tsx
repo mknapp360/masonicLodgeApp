@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 import { getCurrentUser, signOut } from '../services/auth';
 import { royalArchSupabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom'
-import { Card, CardContent } from '../components/ui/card'
-import { Button } from '../components/ui/button'
+
 import { User, LogOut, X, MapPin, Clock } from 'lucide-react';
 import Calendar from '../components/Calendar';
 import type { ChapterMeeting } from '../types/chapter-meetings';
@@ -20,6 +18,7 @@ const Events = () => {
   const [calendarLoading, setCalendarLoading] = useState(true);
   const [selectedMeetings, setSelectedMeetings] = useState<ChapterMeeting[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [selectedArea, setSelectedArea] = useState<string>('all');
 
   // Check authentication
   useEffect(() => {
@@ -37,30 +36,39 @@ const Events = () => {
 
   // Load chapter meetings for calendar
   useEffect(() => {
-    loadMeetings();
-  }, []);
+    loadMeetings(selectedArea);
+  }, [selectedArea]);
 
-  async function loadMeetings() {
-    setCalendarLoading(true);
-    try {
-      // Use royalArchSupabase instead of supabase for chapter_meetings
-      const { data, error } = await royalArchSupabase
-        .from('chapter_meetings')
-        .select('*')
-        .eq('published', true)
-        .order('meeting_date', { ascending: true });
+  async function loadMeetings(area: string = 'all') {
+  setCalendarLoading(true);
+  try {
+    let query = royalArchSupabase
+      .from('chapter_meetings')
+      .select('*')
+      .eq('published', true);
 
-      if (error) throw error;
-
-      if (data) {
-        setMeetings(data as ChapterMeeting[]);
-      }
-    } catch (error) {
-      console.error('Error loading meetings:', error);
-    } finally {
-      setCalendarLoading(false);
+    // Apply area filter if not 'all'
+    if (area !== 'all') {
+      query = query.eq('area', area);
     }
+
+    const { data, error } = await query.order('meeting_date', { ascending: true });
+
+    if (error) throw error;
+
+    if (data) {
+      setMeetings(data as ChapterMeeting[]);
+    }
+  } catch (error) {
+    console.error('Error loading meetings:', error);
+  } finally {
+    setCalendarLoading(false);
   }
+}
+
+  const handleAreaChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedArea(event.target.value);
+  };
 
   const handleDateClick = (_date: Date, dayMeetings: ChapterMeeting[]) => {
     setSelectedMeetings(dayMeetings);
@@ -94,7 +102,7 @@ const Events = () => {
 
   return (
     <AppLayout>
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="h-[70px] bg-masonic-blue text-white p-4">
         <div className="flex items-center justify-between">
@@ -130,7 +138,41 @@ const Events = () => {
             />
           )}
         </div>
+
+        <div className="container mx-auto px-4 pt-12 bg-slate-50 pb-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-headerText">
+              Search For Meetings In Your Area
+            </h2>
+            <div className="h-1 w-32 bg-primary mx-auto"></div>
+          </div>
+        </div>
+
+        {/* Area Filter Dropdown */}
+      <div className="mb-6 flex justify-center bg-slate-50">
+        <div className="w-full max-w-md">
+          <label htmlFor="area-filter" className="block text-sm font-medium text-gray-700 mb-2 text-center">
+            Search by Area
+          </label>
+          <select
+            id="area-filter"
+            value={selectedArea}
+            onChange={handleAreaChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-masonic-blue focus:border-transparent"
+          >
+            <option value="all">All Areas</option>
+            <option value="1066">Near 1066</option>
+            <option value="Brighton">Near Brighton</option>
+            <option value="Chichester">Near Chichester</option>
+            <option value="Crawley">Near Crawley</option>
+            <option value="Eastbourne">Near Eastbourne</option>
+            <option value="Worthing">Near Worthing</option>
+          </select>
+        </div>
+      </div>
       </section>
+
+      
 
       {/* Legend */}
       <section className="py-8 px-4 bg-slate-50">
@@ -160,167 +202,7 @@ const Events = () => {
 
 
       {/* Lodge Events Section */}
-      <div className="container mx-auto px-4 pt-12 pb-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-headerText">
-              Find Royal Arch meetings in your area
-            </h2>
-            <div className="h-1 w-32 bg-primary mx-auto"></div>
-          </div>
-        </div>
-
-        {/* Three Column Cards */}
-        <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
-            {/* Near 1066 */}
-            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 flex flex-col h-full">
-                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
-                  Near 1066
-                </h3>
-                <ul className="space-y-2 mb-6 text-center flex-1">
-                  <li className="text-muted-foreground">Battle</li>
-                  <li className="text-muted-foreground">Bexhill</li>
-                  <li className="text-muted-foreground">Burwash</li>
-                  <li className="text-muted-foreground">Herstmonceux</li>
-                  <li className="text-muted-foreground">Rye</li>
-                  <li className="text-muted-foreground">St. Leonards</li>
-                </ul>
-                <div className="mt-auto text-center">
-                  <Link
-                    to={`/1066-royal-arch`}
-                    >
-                    <Button variant="outline" className="w-full">
-                      See upcoming meetings
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Near Brighton */}
-            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 flex flex-col h-full">
-                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
-                  Near Brighton
-                </h3>
-                <ul className="space-y-2 mb-6 text-center flex-1">
-                  <li className="text-muted-foreground">Brighton</li>
-                  <li className="text-muted-foreground">Hove</li>
-                  <li className="text-muted-foreground">Lewes</li>
-                  <li className="text-muted-foreground">Peacehaven</li>
-                </ul>
-                <div className="mt-auto text-center">
-                  <Link
-                    to={`/near-brighton-royal-arch`}
-                    >
-                    <Button variant="outline" className="w-full">
-                      See upcoming meetings
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Near Chichester */}
-            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 flex flex-col h-full">
-                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
-                  Near Chichester
-                </h3>
-                <ul className="space-y-2 mb-6 text-center flex-1">
-                  <li className="text-muted-foreground">Bognor Regis</li>
-                  <li className="text-muted-foreground">Chichester</li>
-                  <li className="text-muted-foreground">Midhurst</li>
-                </ul>
-                <div className="mt-auto text-center">
-                  <Link
-                    to={`/near-chichester-royal-arch`}
-                    >
-                    <Button variant="outline" className="w-full">
-                      See upcoming meetings
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            
-
-            {/* Near Crawley */}
-            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 flex flex-col h-full">
-                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
-                  Near Crawley
-                </h3>
-                <ul className="space-y-2 mb-6 text-center flex-1">
-                  <li className="text-muted-foreground">Crawley</li>
-                  <li className="text-muted-foreground">East Grinstead</li>
-                  <li className="text-muted-foreground">Horsham</li>
-                  <li className="text-muted-foreground">Pullborough</li>
-                </ul>
-                <div className="mt-auto text-center">
-                  <Link
-                    to={`/near-crawley-royal-arch`}
-                    >
-                    <Button variant="outline" className="w-full">
-                      See upcoming meetings
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Near Eastbourne */}
-            <Card className="bg-[#f2f2f2] hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 flex flex-col h-full">
-                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
-                  Near Eastbourne
-                </h3>
-                <ul className="space-y-2 mb-6 text-center flex-1">
-                  <li className="text-muted-foreground">Eastbourne</li>
-                  <li className="text-muted-foreground">Herstmonceux</li>
-                  <li className="text-muted-foreground">Lewes</li>
-                  <li className="text-muted-foreground">Uckfield</li>
-                </ul>
-                <div className="mt-auto text-center">
-                  <Link
-                    to={`/near-eastbourne-royal-arch`}
-                    >
-                    <Button variant="outline" className="w-full">
-                      See upcoming meetings
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Near Worthing */}
-            <Card className="bg-[#f0f0f0] hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 flex flex-col h-full">
-                <h3 className="text-2xl font-bold mb-6 text-headerText text-center">
-                  Near Worthing
-                </h3>
-                <ul className="space-y-2 mb-6 text-center flex-1">
-                  <li className="text-muted-foreground">Littlehampton</li>
-                  <li className="text-muted-foreground">Pullborough</li>
-                  <li className="text-muted-foreground">Worthing</li>
-                </ul>
-                <div className="mt-auto text-center">
-                  <Link
-                    to={`/near-worthing-royal-arch`}
-                    >
-                    <Button variant="outline" className="w-full">
-                      See upcoming meetings
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            
-          </div>
-        </div>
+     
 
       {/* Modal for selected meetings */}
       {showModal && (
@@ -344,9 +226,13 @@ const Events = () => {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h4 className="font-semibold text-lg text-gray-900">
-                        {meeting.chapter_name}
+                        {meeting.event_title || meeting.chapter_name}
                       </h4>
-                      <p className="text-sm text-gray-600">Chapter No. {meeting.chapter_number}</p>
+                      {!meeting.event_title && (
+                      <p className="text-muted-foreground mb-4">
+                        Chapter No. {meeting.chapter_number}
+                      </p>
+                    )}
                     </div>
                     <span className={`px-3 py-1 rounded text-xs font-medium ${
                       meeting.meeting_type === 'exaltation' ? 'bg-red-100 text-red-800' :
