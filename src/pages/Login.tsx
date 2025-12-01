@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithInvitation, signInWithEmailPassword } from '../services/auth';
-import { Users, Eye, EyeOff, Mail, Key } from 'lucide-react';
+import { Users, Eye, EyeOff, Mail, } from 'lucide-react';
 
 const Login = () => {
   const [mode, setMode] = useState<'invitation' | 'login'>('invitation');
@@ -68,15 +68,15 @@ const Login = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">The Sussex Masonic App</h1>
           <p className="text-gray-600">
             {mode === 'invitation' 
-              ? 'Enter your invitation code to get started' 
-              : 'Sign in with your account'
+              ? '' 
+              : ''
             }
           </p>
         </div>
 
         {/* Toggle buttons */}
         <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-          <button
+          {/*<button
             onClick={() => {
               setMode('invitation');
               setError('');
@@ -89,7 +89,7 @@ const Login = () => {
           >
             <Key className="w-4 h-4 inline mr-2" />
             First Time
-          </button>
+          </button>*/}
           <button
             onClick={() => {
               setMode('login');
@@ -202,7 +202,7 @@ const Login = () => {
             </p>
             {mode === 'login' && (
               <p className="text-xs text-gray-500 mt-2">
-                Don't have an account? Use your invitation code above.
+                Don't have an account? You need to speak with your Lodge Secretary.
               </p>
             )}
           </div>
