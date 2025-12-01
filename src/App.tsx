@@ -1,7 +1,6 @@
 // App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
-import ComingSoon from './pages/LandingPage';
 import AccountSetup from './pages/AccountSetup';
 import Events from './pages/Events';
 import MyMeetings from './pages/MyMeetings';
@@ -21,8 +20,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-lodge-cream">
         <Routes>
-          <Route path="/" element={<ComingSoon />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Login />} />
           <Route path="/account-setup" element={<AccountSetup />} />
           <Route path="/events" element={<Events />} />
           <Route path="/my-meetings" element={<MyMeetings />} />
